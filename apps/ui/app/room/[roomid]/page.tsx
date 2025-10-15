@@ -6,6 +6,7 @@ import RoomOptions from "@/app/components/RoomOptions";
 import { useChessStore } from "@/app/store/chessStore";
 import { useEffect, useState } from "react";
 
+
 interface Props {
   params: Promise<{ roomid: string }>;
 }
@@ -60,7 +61,7 @@ export default function RoomPage({ params }: Props) {
   // Initialize WebSocket connection if not exists
   useEffect(() => {
     if (!socket) {
-      const ws = new WebSocket("ws://localhost:8080");
+      const ws = new WebSocket(process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8080" );
 
       ws.onopen = () => {
         console.log("WebSocket connected");

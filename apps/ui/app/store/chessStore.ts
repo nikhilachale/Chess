@@ -57,7 +57,7 @@ const initialBoard = [
 
 export const useChessStore = create<ChessState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       socket: null,
       roomName: "",
       player: null,
