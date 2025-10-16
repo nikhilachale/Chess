@@ -23,6 +23,7 @@ export interface GameState {
   kingMoved: { white: boolean; black: boolean };
   rookMoved: { white: { left: boolean; right: boolean }; black: { left: boolean; right: boolean } };
   lastMove?: LastMove;
+  moveCount: number; // Track total moves made in the game
 }
 
 export class ChessGame {
@@ -35,7 +36,8 @@ export class ChessGame {
       board: ChessGame.createInitialBoard(),
       turn: playerId,
       kingMoved: { white: false, black: false },
-      rookMoved: { white: { left: false, right: false }, black: { left: false, right: false } }
+      rookMoved: { white: { left: false, right: false }, black: { left: false, right: false } },
+      moveCount: 0
     };
   }
 
@@ -351,6 +353,14 @@ export class ChessGame {
 
   // ================== API ==================
 
+  /**
+   * Public check method for external consumers (AI/evaluators).
+   * Returns true if the given player's king is currently in check.
+   */
+  public isInCheck(playerId: 'white' | 'black'): boolean {
+    return this.isKingInCheck(playerId);
+  }
+
   getMoves(x: number, y: number, playerId: string): Move[] {
     if (x < 0 || x > 7 || y < 0 || y > 7) return [];
     const piece = this.state.board[x]?.[y] ?? "";
@@ -502,6 +512,7 @@ export class ChessGame {
 
     this.state.lastMove = { from, to, piece };
     this.state.turn = playerId === "white" ? "black" : "white";
+    this.state.moveCount++; // Increment move count after each move
     // Check if opponent king is in check
     // After checking opponentInCheck
     const opponentId = this.state.turn;
@@ -533,59 +544,57 @@ export class ChessGame {
   }
 
 
-  /**
-   * Generate FEN string from current game state
-   */
-  public getFEN(): string {
-    const rows = this.state.board.map(row => {
-      let fenRow = '';
-      let empty = 0;
-      for (const cell of row) {
-        if (!cell) {
-          empty++;
-        } else {
-          if (empty > 0) {
-            fenRow += empty;
-            empty = 0;
-          }
-          fenRow += cell;
-        }
-      }
-      if (empty > 0) fenRow += empty;
-      return fenRow;
-    });
+  
+  // public getFEN(): string {
+  //   const rows = this.state.board.map(row => {
+  //     let fenRow = '';
+  //     let empty = 0;
+  //     for (const cell of row) {
+  //       if (!cell) {
+  //         empty++;
+  //       } else {
+  //         if (empty > 0) {
+  //           fenRow += empty;
+  //           empty = 0;
+  //         }
+  //         fenRow += cell;
+  //       }
+  //     }
+  //     if (empty > 0) fenRow += empty;
+  //     return fenRow;
+  //   });
 
-    // Active color
-    const turn = this.state.turn === 'white' ? 'w' : 'b';
+  //   // Active color
+  //   const turn = this.state.turn === 'white' ? 'w' : 'b';
 
-    // Castling availability
-    const castling =
-      (!this.state.kingMoved.white && !this.state.rookMoved.white.right ? 'K' : '') +
-      (!this.state.kingMoved.white && !this.state.rookMoved.white.left ? 'Q' : '') +
-      (!this.state.kingMoved.black && !this.state.rookMoved.black.right ? 'k' : '') +
-      (!this.state.kingMoved.black && !this.state.rookMoved.black.left ? 'q' : '');
+  //   // Castling availability
+  //   const castling =
+  //     (!this.state.kingMoved.white && !this.state.rookMoved.white.right ? 'K' : '') +
+  //     (!this.state.kingMoved.white && !this.state.rookMoved.white.left ? 'Q' : '') +
+  //     (!this.state.kingMoved.black && !this.state.rookMoved.black.right ? 'k' : '') +
+  //     (!this.state.kingMoved.black && !this.state.rookMoved.black.left ? 'q' : '');
     
-    const castlingStr = castling || '-';
+  //   const castlingStr = castling || '-';
 
-    // En passant target square
-    let enPassant = '-';
-    if (this.state.lastMove?.piece.toLowerCase() === 'p') {
-      const last = this.state.lastMove;
-      const diff = Math.abs(last.from.x - last.to.x);
-      if (diff === 2) {
-        // Pawn moved two squares
-        const file = String.fromCharCode('a'.charCodeAt(0) + last.from.y);
-        const rank = (last.from.x + last.to.x) / 2 + 1; // 1-indexed
-        enPassant = `${file}${rank}`;
-      }
-    }
+  //   // En passant target square
+  //   let enPassant = '-';
+  //   if (this.state.lastMove?.piece.toLowerCase() === 'p') {
+  //     const last = this.state.lastMove;
+  //     const diff = Math.abs(last.from.x - last.to.x);
+  //     if (diff === 2) {
+  //       // Pawn moved two squares
+  //       const file = String.fromCharCode('a'.charCodeAt(0) + last.from.y);
+  //       const rank = (last.from.x + last.to.x) / 2 + 1; // 1-indexed
+  //       enPassant = `${file}${rank}`;
+  //     }
+  //   }
 
-    // Halfmove clock (optional: could track captures/pawn moves)
-    const halfmove = 0;
+  //   // Halfmove clock (optional: could track captures/pawn moves)
+  //   const halfmove = 0;
 
-    // Fullmove number (optional: could increment after black move)
-    const fullmove = 1;
+  //   // Fullmove number (optional: could increment after black move)
+  //   const fullmove = 1;
 
-    return `${rows.join('/')} ${turn} ${castlingStr} ${enPassant} ${halfmove} ${fullmove}`;
-  }
+  //   return `${rows.join('/')} ${turn} ${castlingStr} ${enPassant} ${halfmove} ${fullmove}`;
+  // }
 }

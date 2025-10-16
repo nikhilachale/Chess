@@ -1,15 +1,8 @@
 "use client";
 
 
-interface Move {
-  fromPlayer: string;
-  piece: string;
-  from: { x: number; y: number };
-  to: { x: number; y: number };
-  captured?: string;
-}
 
-export default function MoveHistory({ moves }: { moves: Move[] }) {
+export default function MoveHistory() {
   return (
     <div className="w-96 shadow-lg rounded-xl bg-yellow-50 p-4 border border-yellow-300">
       <table className="min-w-full border border-yellow-300 text-yellow-900 text-center">

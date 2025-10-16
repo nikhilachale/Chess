@@ -4,15 +4,14 @@ import { useChessStore } from "../store/chessStore";
 import ChessSquare from "./ChessSquare";
 import PieceIcon from "./PieceIcon";
 
-interface Props {
-  board: string[][];
-  canMove: { x: number; y: number }[];
-  check: "white" | "black" | null;
-  selectedPiece: { x: number; y: number } | null;
-  onSquareClick: (row: number, col: number) => void;
-}
 
-export default function ChessBoard({ onSquareClick }: { onSquareClick: (row: number, col: number) => void }) {
+export default function ChessBoard({ 
+  onSquareClick, 
+  highlightedSuggestion 
+}: { 
+  onSquareClick: (row: number, col: number) => void;
+  highlightedSuggestion?: {from: {x: number, y: number}, to: {x: number, y: number}} | null;
+}) {
    const { board, check, canMove, selectedPiece } = useChessStore();
   
   return (
@@ -22,6 +21,8 @@ export default function ChessBoard({ onSquareClick }: { onSquareClick: (row: num
           const isBlack = (rowIndex + colIndex) % 2 === 1;
           const isSelected = selectedPiece?.x === rowIndex && selectedPiece?.y === colIndex;
           const isAvailableMove = canMove.some(move => move.x === rowIndex && move.y === colIndex);
+          const isSuggestionFrom = highlightedSuggestion?.from.x === rowIndex && highlightedSuggestion?.from.y === colIndex;
+          const isSuggestionTo = highlightedSuggestion?.to.x === rowIndex && highlightedSuggestion?.to.y === colIndex;
 
           return (
             <ChessSquare
@@ -29,6 +30,8 @@ export default function ChessBoard({ onSquareClick }: { onSquareClick: (row: num
               isBlack={isBlack}
               isSelected={isSelected}
               isAvailableMove={isAvailableMove}
+              isSuggestionFrom={isSuggestionFrom}
+              isSuggestionTo={isSuggestionTo}
               check={check}
               onClick={() => onSquareClick(rowIndex, colIndex)}
             >

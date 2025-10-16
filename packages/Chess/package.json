@@ -9,16 +9,17 @@
       "import": "./dist/Game.js",
       "types": "./dist/Game.d.ts"
     },
-    "./ChessAi":{
-      "require": "./dist/Game.js",
-      "import": "./dist/Game.js",
-      "types": "./dist/Game.d.ts"
+    "./MoveEvaluator": {
+      "require": "./dist/MoveEvaluator.js",
+      "import": "./dist/MoveEvaluator.js",
+      "types": "./dist/MoveEvaluator.d.ts"
     },
-    "./MoveEvaluator.ts":{
-      "require": "./dist/Game.js",
-      "import": "./dist/Game.js",
-      "types": "./dist/Game.d.ts"
+    "./ChessAI": {
+      "require": "./dist/ChessAI.js",
+      "import": "./dist/ChessAI.js",
+      "types": "./dist/ChessAI.d.ts"
     }
+
   },
   "scripts": {
     "build": "tsc -b",

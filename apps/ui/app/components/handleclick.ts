@@ -10,7 +10,6 @@ export const useHandleClick = () => {
     selectedPiece,
     playerId, 
     currentTurn, 
-    check,
     socket, 
     roomName,
     setSelectedPiece, 

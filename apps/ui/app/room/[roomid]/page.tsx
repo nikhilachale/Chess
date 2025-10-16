@@ -41,8 +41,11 @@ export default function RoomPage({ params }: Props) {
   const [gameStarted, setGameStarted] = useState(false);
   const [showJoinPopup, setShowJoinPopup] = useState(false);
   const [joinRoomName, setJoinRoomName] = useState("");
-  const [moved, setMoved] = useState<{ x: number; y: number } | null>(null);
+
   const [moveHistory, setMoveHistory] = useState<string[]>([]);
+  const [moveSuggestions, setMoveSuggestions] = useState<any[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [highlightedSuggestion, setHighlightedSuggestion] = useState<{from: {x: number, y: number}, to: {x: number, y: number}} | null>(null);
 
   // Await params on component mount
   useEffect(() => {
@@ -101,6 +104,10 @@ export default function RoomPage({ params }: Props) {
             setCanMove([]);
             setCurrentTurn(data.turn);
             setCheck(data.check);
+            // Clear suggestion highlights when a move is made
+            setHighlightedSuggestion(null);
+            setShowSuggestions(false);
+            setMoveSuggestions([]);
 // Example: data.from, data.to
   if (data.from && data.to) {
     const moveNotation = moveToNotation(data.from, data.to);
@@ -112,6 +119,17 @@ export default function RoomPage({ params }: Props) {
             break;
           case "user_left":
             console.log("A user left the room");
+            break;
+          case "move_suggestions":
+            setMoveSuggestions(data.suggestions || []);
+            setShowSuggestions(true);
+            // Highlight the best suggestion (first one)
+            if (data.suggestions && data.suggestions.length > 0) {
+              setHighlightedSuggestion({
+                from: data.suggestions[0].from,
+                to: data.suggestions[0].to
+              });
+            }
             break;
         }
       };
@@ -134,6 +152,7 @@ export default function RoomPage({ params }: Props) {
     setRoomChoice('create');
     socket.send(JSON.stringify({
       type: "create_room",
+      playerId: "white",  // First player is always white
       username: player.username
     }));
   };
@@ -166,6 +185,29 @@ function indexToNotation(x: number, y: number) {
   const handleCancelJoinRoom = () => {
     setShowJoinPopup(false);
     setJoinRoomName("");
+  };
+
+  // Handle suggest move
+  const handleSuggestMove = () => {
+    if (!socket || !roomName || !playerId) return;
+    
+    // Clear previous suggestions and highlights
+    setMoveSuggestions([]);
+    setShowSuggestions(false);
+    setHighlightedSuggestion(null);
+    
+    socket.send(JSON.stringify({
+      type: "suggest_move",
+      roomName: roomName,
+      playerId: playerId
+    }));
+  };
+
+  // Handle closing suggestions
+  const handleCloseSuggestions = () => {
+    setShowSuggestions(false);
+    setMoveSuggestions([]);
+    setHighlightedSuggestion(null);
   };
 
   // Show loading if roomId is not yet resolved
@@ -245,6 +287,62 @@ function indexToNotation(x: number, y: number) {
     </div>
   </div>
 
+  {/* AI Suggestions */}
+  <div className="bg-slate-700/20 w-80 backdrop-blur-md rounded-2xl p-6 border border-slate-600/40 shadow-lg">
+    <div className="flex items-center justify-between mb-4">
+      <h3 className="text-xl font-bold text-slate-800 flex items-center">
+        <span className="text-2xl mr-2">🤖</span> AI Assistant
+      </h3>
+    </div>
+    
+    <button
+      onClick={handleSuggestMove}
+      disabled={currentTurn !== playerId || !socket}
+      className={`w-full py-3 px-4 rounded-lg font-semibold transition-all ${
+        currentTurn === playerId && socket
+          ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl'
+          : 'bg-gray-400 text-gray-600 cursor-not-allowed'
+      }`}
+    >
+      💡 Suggest Move
+    </button>
+
+    {showSuggestions && (
+      <div className="mt-4 space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-semibold text-slate-800">Suggestions:</span>
+          <button
+            onClick={handleCloseSuggestions}
+            className="text-gray-500 hover:text-gray-700 text-xs"
+          >
+            ✕ Close
+          </button>
+        </div>
+        <div className="max-h-32 overflow-y-auto space-y-1">
+          {moveSuggestions.slice(0, 5).map((suggestion, index) => (
+            <div key={index} className={`text-xs p-2 rounded text-gray-200 ${
+              index === 0 ? 'bg-blue-600/50 border border-blue-400' : 'bg-slate-600/30'
+            }`}>
+              {index === 0 && (
+                <div className="flex items-center gap-1 mb-1">
+                  <span className="text-xs text-blue-300">✨ BEST</span>
+                </div>
+              )}
+              <span className="font-mono">
+                {indexToNotation(suggestion.from.x, suggestion.from.y)} → {indexToNotation(suggestion.to.x, suggestion.to.y)}
+              </span>
+              {suggestion.score && (
+                <span className="ml-2 text-amber-400">
+                  ({suggestion.score.toFixed(1)})
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+  </div>
+
   {/* Move History */}
 <div className="bg-slate-700/20 w-80 backdrop-blur-md rounded-2xl p-6 border border-slate-600/40 shadow-lg">
   <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center">
@@ -263,7 +361,10 @@ function indexToNotation(x: number, y: number) {
       {/* Chess Board */}
       <div className="lg:col-span-4 flex justify-center">
         <div className="bg-amber-100/10 backdrop-blur-md p-6 rounded-3xl border-4 shadow-xl">
-          <ChessBoard onSquareClick={handleSquareClick} />
+          <ChessBoard 
+            onSquareClick={handleSquareClick} 
+            highlightedSuggestion={highlightedSuggestion}
+          />
         </div>
       </div>
 
