@@ -1,0 +1,12 @@
+{
+  "build": {
+    "env": {
+      "NODE_VERSION": "20"
+    }
+  },
+  
+  "buildCommand": "turbo run build --filter=web",
+  "outputDirectory": "apps/web/.next",
+  "framework": "nextjs"
+
+}
