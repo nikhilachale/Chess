@@ -17,7 +17,6 @@ export default function RoomPage({ params }: Props) {
     setSocket,
     roomName,
     setRoomName,
-    username,
     setUsername,
     player,
     setPlayer,
@@ -27,7 +26,6 @@ export default function RoomPage({ params }: Props) {
     setCurrentTurn,
     board,
     setBoard,
-    canMove,
     setCanMove,
     check,
     setCheck
@@ -36,16 +34,30 @@ export default function RoomPage({ params }: Props) {
   const { handleSquareClick } = useHandleClick();
   
   // Local state
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [roomChoice, setRoomChoice] = useState<'create' | 'join' | null>(null);
   const [roomId, setRoomId] = useState<string>("");
   const [gameStarted, setGameStarted] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [showJoinPopup, setShowJoinPopup] = useState(false);
   const [joinRoomName, setJoinRoomName] = useState("");
 
   const [moveHistory, setMoveHistory] = useState<string[]>([]);
-  const [moveSuggestions, setMoveSuggestions] = useState<any[]>([]);
+  const [moveSuggestions, setMoveSuggestions] = useState<Array<{
+    from: {x: number, y: number},
+    to: {x: number, y: number},
+    piece: string,
+    score?: number
+  }>>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [highlightedSuggestion, setHighlightedSuggestion] = useState<{from: {x: number, y: number}, to: {x: number, y: number}} | null>(null);
+
+  // Helper functions defined before useEffect to avoid exhaustive-deps warning
+  const indexToNotation = (x: number, y: number) => {
+    const files = ['a','b','c','d','e','f','g','h'];
+    return `${files[x]}${8 - y}`; // y=0 → row 8, y=7 → row 1
+  };
+
 
   // Await params on component mount
   useEffect(() => {
@@ -63,6 +75,11 @@ export default function RoomPage({ params }: Props) {
 
   // Initialize WebSocket connection if not exists
   useEffect(() => {
+    // Helper function to convert move coordinates to chess notation
+    const moveToNotation = (from: {x:number, y:number}, to: {x:number, y:number}) => {
+      return `${indexToNotation(from.x, from.y)}${indexToNotation(to.x, to.y)}`;
+    };
+
     if (!socket) {
       const ws = new WebSocket(process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8080" );
 
@@ -143,9 +160,10 @@ export default function RoomPage({ params }: Props) {
         console.error("WebSocket error:", error);
       };
     }
-  }, [socket, setSocket, setRoomName, setPlayerId, setCurrentTurn, setBoard, setCanMove, setCheck, board]);
+  }, [socket, setSocket, setRoomName, setPlayerId, setCurrentTurn, setBoard, setCanMove, setCheck, board, setGameStarted, setShowJoinPopup, setRoomChoice, setMoveSuggestions, setShowSuggestions, setHighlightedSuggestion, setMoveHistory, indexToNotation]);
 
   // Handle create room
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleCreateRoom = () => {
     if (!socket || !player?.username) return;
     
@@ -156,19 +174,15 @@ export default function RoomPage({ params }: Props) {
       username: player.username
     }));
   };
-function indexToNotation(x: number, y: number) {
-  const files = ['a','b','c','d','e','f','g','h'];
-  return `${files[x]}${8 - y}`; // y=0 → row 8, y=7 → row 1
-}
-  function moveToNotation(from: {x:number, y:number}, to: {x:number, y:number}) {
-  return `${indexToNotation(from.x, from.y)}${indexToNotation(to.x, to.y)}`;
-}
+
   // Handle join room button click (show popup)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleJoinRoomClick = () => {
     setShowJoinPopup(true);
   };
 
   // Handle actual join room with entered room name
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleConfirmJoinRoom = () => {
     if (!socket || !player?.username || !joinRoomName.trim()) return;
     
@@ -182,6 +196,7 @@ function indexToNotation(x: number, y: number) {
   };
 
   // Handle cancel join room
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleCancelJoinRoom = () => {
     setShowJoinPopup(false);
     setJoinRoomName("");
