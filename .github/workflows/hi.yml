@@ -1,18 +1,89 @@
 name: GitHub Actions Demo
-run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
-on: [push]
+run-name: ${{ github.actor }} is deploying Chess app 🚀
+on: 
+  push:
+    branches:
+      - main
+
 jobs:
-  Explore-GitHub-Actions:
+  Redeploy:
     runs-on: ubuntu-latest
+    name: Redeploy Chess app to production
+
     steps:
-      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
-      - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
-      - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
-      - name: Check out repository code
+      - name: Checkout repository
         uses: actions/checkout@v4
-      - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
-      - run: echo "🖥️ The workflow is now ready to test your code on the runner."
-      - name: List files in the repository
+
+      - name: Test connectivity
         run: |
-          ls ${{ github.workspace }}
-      - run: echo "🍏 This job's status is ${{ job.status }}."
+          echo "Testing network connectivity to server..."
+          if timeout 10 ping -c 3 3.110.54.252; then
+            echo "✅ Server is pingable"
+          else
+            echo "⚠️ Ping failed, but server might still be reachable via SSH"
+          fi
+          
+          if timeout 10 nc -z 3.110.54.252 22; then
+            echo "✅ SSH port (22) is accessible"
+          else
+            echo "❌ SSH port (22) is not accessible"
+            exit 1
+          fi
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          timeout 10 ssh-keyscan -H 3.110.54.252 >> ~/.ssh/known_hosts || true
+
+      - name: Deploy using Docker Compose
+        run: |
+          ssh -i ~/.ssh/deploy_key \
+              -o StrictHostKeyChecking=no \
+              -o ConnectTimeout=30 \
+              -o ServerAliveInterval=10 \
+              -o ServerAliveCountMax=3 \
+              ec2-user@3.110.54.252 << 'EOF'
+          set -e
+          echo "✅ Connected to server"
+
+          echo "📁 Navigating to project directory..."
+          cd ~/Chess || { echo "❌ Project directory not found"; exit 1; }
+
+          echo "📥 Pulling latest code..."
+          git pull origin main
+
+          echo "📦 Deploying Chess app with Docker Compose..."
+          # Use the docker-compose.yml from the repository
+          if [ ! -f docker-compose.yml ]; then
+            echo "❌ docker-compose.yml not found in repository!"
+            exit 1
+          fi
+
+          echo "🔄 Pulling latest Docker images..."
+          docker-compose pull
+
+          echo "🛑 Stopping existing containers..."
+          docker-compose down
+
+          echo "🚀 Starting containers with latest images..."
+          docker-compose up -d
+
+          echo "⏳ Waiting for containers to start..."
+          sleep 10
+
+          echo "📊 Container status:"
+          docker-compose ps
+
+          echo "🔄 Restarting PM2 processes..."
+          if command -v pm2 >/dev/null 2>&1; then
+            pm2 restart all
+            echo "✅ PM2 processes restarted"
+            pm2 list
+          else
+            echo "⚠️ PM2 not found on server"
+          fi
+
+          echo "🎉 Chess app deployed successfully!"
+          EOF

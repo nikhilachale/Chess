@@ -1,8 +1,8 @@
+version: '3.9'
+
 services:
   ui:
-    build: 
-      context: .
-      dockerfile: docker/Dockerfile.ui
+    image: nikhilllll/chess-ui:latest
     ports:
       - "3000:3000"
     environment:
@@ -10,11 +10,9 @@ services:
     depends_on:
       - ws
     restart: unless-stopped
-    
+
   ws:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.ws
+    image: nikhilllll/chess-ws:latest
     ports:
       - "8080:8080"
     restart: unless-stopped
