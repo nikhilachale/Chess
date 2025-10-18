@@ -1,102 +1,46 @@
-name: GitHub Actions Demo
-run-name: ${{ github.actor }} is deploying Chess app 🚀
-on: 
-  push:
-    branches:
-      - main
+- name: Deploy using Docker Compose
+  run: |
+    ssh -i ~/.ssh/deploy_key \
+        -o StrictHostKeyChecking=no \
+        -o ConnectTimeout=30 \
+        -o ServerAliveInterval=10 \
+        -o ServerAliveCountMax=3 \
+        ec2-user@3.110.54.252 << 'EOF'
+    set -e
+    echo "✅ Connected to server"
 
-jobs:
-  Redeploy:
-    runs-on: ubuntu-latest
-    name: Redeploy Chess app to production
+    echo "📁 Navigating to project directory..."
+    cd ~/Chess || { echo "❌ Project directory not found"; exit 1; }
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    echo "📥 Pulling latest code..."
+    git pull origin main
 
-      - name: Test connectivity
-        run: |
-          echo "Testing network connectivity to server..."
-          if timeout 10 ping -c 3 3.110.54.252; then
-            echo "✅ Server is pingable"
-          else
-            echo "⚠️ Ping failed, but server might still be reachable via SSH"
-          fi
-          
-          if timeout 10 nc -z 3.110.54.252 22; then
-            echo "✅ SSH port (22) is accessible"
-          else
-            echo "❌ SSH port (22) is not accessible"
-            exit 1
-          fi
+    echo "🛑 Stopping existing containers..."
+    docker-compose down || true
 
-      - name: Setup SSH key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          timeout 10 ssh-keyscan -H 3.110.54.252 >> ~/.ssh/known_hosts || true
+    echo "🔄 Starting containers with latest images..."
+    docker-compose up -d --pull always
 
-      - name: Deploy using Docker Compose
-        run: |
-          ssh -i ~/.ssh/deploy_key \
-              -o StrictHostKeyChecking=no \
-              -o ConnectTimeout=30 \
-              -o ServerAliveInterval=10 \
-              -o ServerAliveCountMax=3 \
-              ec2-user@3.110.54.252 << 'EOF'
-          set -e
-          echo "✅ Connected to server"
+    echo "⏳ Waiting for containers to start..."
+    sleep 10
 
-          echo "📁 Navigating to project directory..."
-          cd ~/Chess || { echo "❌ Project directory not found"; exit 1; }
+    echo "📊 Container status:"
+    docker-compose ps
 
-          echo "📥 Pulling latest code..."
-          git pull origin main
+    echo "🔍 Checking container health..."
+    if docker ps --filter "name=chess-ui" --filter "status=running" | grep -q chess-ui; then
+      echo "✅ UI container is running"
+    else
+      echo "❌ UI container failed to start"
+      docker logs chess-ui --tail 20
+    fi
 
-          echo "🔧 Installing dependencies and building UI using npm..."
-          if command -v npm >/dev/null 2>&1; then
-            echo "Using npm..."
-            npm install
-            echo "📦 Building UI application..."
-            cd apps/ui
-            npm run build
-            cd ../..
-          else
-            echo "❌ npm not found on server!"
-            exit 1
-          fi
+    if docker ps --filter "name=chess-ws" --filter "status=running" | grep -q chess-ws; then
+      echo "✅ WebSocket container is running"
+    else
+      echo "❌ WebSocket container failed to start"
+      docker logs chess-ws --tail 20
+    fi
 
-          echo "📦 Deploying Chess app with Docker Compose..."
-          # Use the docker-compose.yml from the repository
-          if [ ! -f docker-compose.yml ]; then
-            echo "❌ docker-compose.yml not found in repository!"
-            exit 1
-          fi
-
-          echo "🔄 Pulling latest Docker images..."
-          docker-compose pull
-
-          echo "🛑 Stopping existing containers..."
-          docker-compose down
-
-          echo "🚀 Starting containers with latest images..."
-          docker-compose up -d
-
-          echo "⏳ Waiting for containers to start..."
-          sleep 10
-
-          echo "📊 Container status:"
-          docker-compose ps
-
-          echo "🔄 Restarting PM2 processes..."
-          if command -v pm2 >/dev/null 2>&1; then
-            pm2 restart all
-            echo "✅ PM2 processes restarted"
-            pm2 list
-          else
-            echo "⚠️ PM2 not found on server"
-          fi
-
-          echo "🎉 Chess app deployed successfully!"
-          EOF
+    echo "🎉 Chess app deployed successfully!"
+    EOF
