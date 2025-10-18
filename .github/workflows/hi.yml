@@ -1,46 +1,86 @@
-- name: Deploy using Docker Compose
-  run: |
-    ssh -i ~/.ssh/deploy_key \
-        -o StrictHostKeyChecking=no \
-        -o ConnectTimeout=30 \
-        -o ServerAliveInterval=10 \
-        -o ServerAliveCountMax=3 \
-        ec2-user@3.110.54.252 << 'EOF'
-    set -e
-    echo "✅ Connected to server"
+name: GitHub Actions Demo
+run-name: ${{ github.actor }} is deploying Chess app 🚀
 
-    echo "📁 Navigating to project directory..."
-    cd ~/Chess || { echo "❌ Project directory not found"; exit 1; }
+on: 
+  push:
+    branches:
+      - main
 
-    echo "📥 Pulling latest code..."
-    git pull origin main
+jobs:
+  Redeploy:
+    runs-on: ubuntu-latest
+    name: Redeploy Chess app to production
 
-    echo "🛑 Stopping existing containers..."
-    docker-compose down || true
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    echo "🔄 Starting containers with latest images..."
-    docker-compose up -d --pull always
+      - name: Test connectivity
+        run: |
+          echo "Testing network connectivity to server..."
+          if timeout 10 ping -c 3 3.110.54.252; then
+            echo "✅ Server is pingable"
+          else
+            echo "⚠️ Ping failed, but server might still be reachable via SSH"
+          fi
+          
+          if timeout 10 nc -z 3.110.54.252 22; then
+            echo "✅ SSH port (22) is accessible"
+          else
+            echo "❌ SSH port (22) is not accessible"
+            exit 1
+          fi
 
-    echo "⏳ Waiting for containers to start..."
-    sleep 10
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          timeout 10 ssh-keyscan -H 3.110.54.252 >> ~/.ssh/known_hosts || true
 
-    echo "📊 Container status:"
-    docker-compose ps
+      - name: Deploy using Docker Compose
+        run: |
+          ssh -i ~/.ssh/deploy_key \
+              -o StrictHostKeyChecking=no \
+              -o ConnectTimeout=30 \
+              -o ServerAliveInterval=10 \
+              -o ServerAliveCountMax=3 \
+              ec2-user@3.110.54.252 << 'EOF'
+          set -e
+          echo "✅ Connected to server"
 
-    echo "🔍 Checking container health..."
-    if docker ps --filter "name=chess-ui" --filter "status=running" | grep -q chess-ui; then
-      echo "✅ UI container is running"
-    else
-      echo "❌ UI container failed to start"
-      docker logs chess-ui --tail 20
-    fi
+          echo "📁 Navigating to project directory..."
+          cd ~/Chess || { echo "❌ Project directory not found"; exit 1; }
 
-    if docker ps --filter "name=chess-ws" --filter "status=running" | grep -q chess-ws; then
-      echo "✅ WebSocket container is running"
-    else
-      echo "❌ WebSocket container failed to start"
-      docker logs chess-ws --tail 20
-    fi
+          echo "📥 Pulling latest code..."
+          git pull origin main
 
-    echo "🎉 Chess app deployed successfully!"
-    EOF
+          echo "🛑 Stopping existing containers..."
+          docker-compose down || true
+
+          echo "🔄 Starting containers with latest images..."
+          docker-compose up -d --pull always
+
+          echo "⏳ Waiting for containers to start..."
+          sleep 10
+
+          echo "📊 Container status:"
+          docker-compose ps
+
+          echo "🔍 Checking container health..."
+          if docker ps --filter "name=chess-ui" --filter "status=running" | grep -q chess-ui; then
+            echo "✅ UI container is running"
+          else
+            echo "❌ UI container failed to start"
+            docker logs chess-ui --tail 20
+          fi
+
+          if docker ps --filter "name=chess-ws" --filter "status=running" | grep -q chess-ws; then
+            echo "✅ WebSocket container is running"
+          else
+            echo "❌ WebSocket container failed to start"
+            docker logs chess-ws --tail 20
+          fi
+
+          echo "🎉 Chess app deployed successfully!"
+          EOF
