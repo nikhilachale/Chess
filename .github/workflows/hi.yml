@@ -54,6 +54,26 @@ jobs:
           echo "📥 Pulling latest code..."
           git pull origin main
 
+          echo "🔧 Installing dependencies and building UI..."
+          if command -v pnpm >/dev/null 2>&1; then
+            echo "Using pnpm..."
+            pnpm install
+            echo "📦 Building UI application..."
+            cd apps/ui
+            pnpm build
+            cd ../..
+          elif command -v npm >/dev/null 2>&1; then
+            echo "Using npm..."
+            npm install
+            echo "📦 Building UI application..."
+            cd apps/ui
+            npm run build
+            cd ../..
+          else
+            echo "❌ Neither pnpm nor npm found on server!"
+            exit 1
+          fi
+
           echo "📦 Deploying Chess app with Docker Compose..."
           # Use the docker-compose.yml from the repository
           if [ ! -f docker-compose.yml ]; then
