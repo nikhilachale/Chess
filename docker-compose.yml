@@ -3,6 +3,7 @@ version: '3.9'
 services:
   ui:
     image: nikhilllll/chess-ui:latest
+    platform: linux/amd64
     ports:
       - "3000:3000"
     environment:
@@ -13,6 +14,7 @@ services:
 
   ws:
     image: nikhilllll/chess-ws:latest
+    platform: linux/amd64
     ports:
       - "8080:8080"
     restart: unless-stopped
