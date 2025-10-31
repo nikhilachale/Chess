@@ -545,56 +545,5 @@ export class ChessGame {
 
 
   
-  // public getFEN(): string {
-  //   const rows = this.state.board.map(row => {
-  //     let fenRow = '';
-  //     let empty = 0;
-  //     for (const cell of row) {
-  //       if (!cell) {
-  //         empty++;
-  //       } else {
-  //         if (empty > 0) {
-  //           fenRow += empty;
-  //           empty = 0;
-  //         }
-  //         fenRow += cell;
-  //       }
-  //     }
-  //     if (empty > 0) fenRow += empty;
-  //     return fenRow;
-  //   });
-
-  //   // Active color
-  //   const turn = this.state.turn === 'white' ? 'w' : 'b';
-
-  //   // Castling availability
-  //   const castling =
-  //     (!this.state.kingMoved.white && !this.state.rookMoved.white.right ? 'K' : '') +
-  //     (!this.state.kingMoved.white && !this.state.rookMoved.white.left ? 'Q' : '') +
-  //     (!this.state.kingMoved.black && !this.state.rookMoved.black.right ? 'k' : '') +
-  //     (!this.state.kingMoved.black && !this.state.rookMoved.black.left ? 'q' : '');
-    
-  //   const castlingStr = castling || '-';
-
-  //   // En passant target square
-  //   let enPassant = '-';
-  //   if (this.state.lastMove?.piece.toLowerCase() === 'p') {
-  //     const last = this.state.lastMove;
-  //     const diff = Math.abs(last.from.x - last.to.x);
-  //     if (diff === 2) {
-  //       // Pawn moved two squares
-  //       const file = String.fromCharCode('a'.charCodeAt(0) + last.from.y);
-  //       const rank = (last.from.x + last.to.x) / 2 + 1; // 1-indexed
-  //       enPassant = `${file}${rank}`;
-  //     }
-  //   }
-
-  //   // Halfmove clock (optional: could track captures/pawn moves)
-  //   const halfmove = 0;
-
-  //   // Fullmove number (optional: could increment after black move)
-  //   const fullmove = 1;
-
-  //   return `${rows.join('/')} ${turn} ${castlingStr} ${enPassant} ${halfmove} ${fullmove}`;
-  // }
+  
 }

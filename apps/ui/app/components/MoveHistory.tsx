@@ -15,20 +15,7 @@ export default function MoveHistory() {
           </tr>
         </thead>
         <tbody>
-          {/* {moves.length === 0 ? (
-            <tr>
-              <td colSpan={4} className="px-4 py-3 italic">No moves yet</td>
-            </tr>
-          ) : (
-            // moves.map((move, i) => (
-            //   <tr key={i} className="odd:bg-yellow-100 even:bg-yellow-200">
-            //     <td className="border px-2 py-1">{move.piece}</td>
-            //     <td className="border px-2 py-1">{toChessNotation(move.from)}</td>
-            //     <td className="border px-2 py-1">{toChessNotation(move.to)}</td>
-            //     <td className="border px-2 py-1">{move.captured ?? "-"}</td>
-            //   </tr>
-            ))
-          )} */}
+         
         </tbody>
       </table>
     </div>
