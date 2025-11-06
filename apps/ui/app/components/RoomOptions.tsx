@@ -173,24 +173,7 @@ export default function RoomOptions({ socket, player }: Props) {
                 </button>
               </div>
 
-              {/* Quick access options */}
-              <div className="border-t border-amber-700/30 pt-6">
-                <p className="text-stone-400 text-sm mb-4 text-center">Popular Game Rooms:</p>
-                <div className="flex flex-wrap justify-center gap-3">
-                  {['GRANDMASTER', 'KNIGHTS', 'CASTLE', 'ROYALTY'].map((chamber) => (
-                    <button
-                      key={chamber}
-                      onClick={() => {
-                        setJoinRoomName(chamber);
-                        setShowJoinPopup(true);
-                      }}
-                      className="px-4 py-2 bg-stone-800/40 hover:bg-amber-600/20 text-stone-300 hover:text-amber-200 rounded-lg text-sm font-mono transition-colors duration-300 border border-stone-600/30 hover:border-amber-600/40"
-                    >
-                      {chamber}
-                    </button>
-                  ))}
-                </div>
-              </div>
+            
             </div>
           </div>
 

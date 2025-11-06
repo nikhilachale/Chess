@@ -18,6 +18,9 @@ COPY --from=deps /app /app
 # Copy the entire apps/ui source code
 COPY apps/ui ./apps/ui
 WORKDIR /app/apps/ui
+# Set environment variables
+ARG NEXT_PUBLIC_WS_URL
+ENV NEXT_PUBLIC_WS_URL=${NEXT_PUBLIC_WS_URL}
 RUN pnpm build
 
 # ---------- Runtime ----------

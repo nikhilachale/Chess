@@ -40,7 +40,7 @@ export default function RoomPage({ params }: Props) {
   const [gameStarted, setGameStarted] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [showJoinPopup, setShowJoinPopup] = useState(false);
-  const [joinRoomName, setJoinRoomName] = useState("");
+
 
   const [moveHistory, setMoveHistory] = useState<string[]>([]);
   const [moveSuggestions, setMoveSuggestions] = useState<Array<{
@@ -81,7 +81,8 @@ export default function RoomPage({ params }: Props) {
     };
 
     if (!socket) {
-      const ws = new WebSocket(process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8080" );
+      const ws = new WebSocket( process.env.NEXT_PUBLIC_WS_URL ||"ws://localhost:8080" );
+      // const ws = new WebSocket("ws://3.110.54.252:8080");
 
       ws.onopen = () => {
         console.log("WebSocket connected");
@@ -152,6 +153,7 @@ export default function RoomPage({ params }: Props) {
       };
 
       ws.onclose = () => {
+        alert("WebSocket connection closed");
         console.log("WebSocket disconnected");
         setSocket(null);
       };
@@ -162,45 +164,10 @@ export default function RoomPage({ params }: Props) {
     }
   }, [socket, setSocket, setRoomName, setPlayerId, setCurrentTurn, setBoard, setCanMove, setCheck, board, setGameStarted, setShowJoinPopup, setRoomChoice, setMoveSuggestions, setShowSuggestions, setHighlightedSuggestion, setMoveHistory, indexToNotation]);
 
-  // Handle create room
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleCreateRoom = () => {
-    if (!socket || !player?.username) return;
-    
-    setRoomChoice('create');
-    socket.send(JSON.stringify({
-      type: "create_room",
-      playerId: "white",  // First player is always white
-      username: player.username
-    }));
-  };
 
-  // Handle join room button click (show popup)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleJoinRoomClick = () => {
-    setShowJoinPopup(true);
-  };
 
-  // Handle actual join room with entered room name
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleConfirmJoinRoom = () => {
-    if (!socket || !player?.username || !joinRoomName.trim()) return;
-    
-    setRoomChoice('join');
-    setShowJoinPopup(false);
-    socket.send(JSON.stringify({
-      type: "join_room",
-      roomName: joinRoomName.trim(),
-      playerId: "black", // always join as black
-    }));
-  };
 
-  // Handle cancel join room
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleCancelJoinRoom = () => {
-    setShowJoinPopup(false);
-    setJoinRoomName("");
-  };
+ 
 
   // Handle suggest move
   const handleSuggestMove = () => {
@@ -225,6 +192,13 @@ export default function RoomPage({ params }: Props) {
     setHighlightedSuggestion(null);
   };
 
+  const panelClass =
+    "bg-gradient-to-br from-stone-900/60 to-zinc-900/60 backdrop-blur-xl rounded-2xl border border-amber-600/20 shadow-xl";
+  const sectionTitleClass =
+    "flex items-center gap-2 font-semibold tracking-wide text-amber-100 text-sm uppercase";
+  const badgeClass =
+    "font-semibold text-xs px-2 py-1 rounded-full transition-colors";
+
   // Show loading if roomId is not yet resolved
   if (!roomId) {
     return (
@@ -234,7 +208,7 @@ export default function RoomPage({ params }: Props) {
           <div className="absolute inset-0 bg-gradient-to-r from-amber-900/20 via-yellow-800/15 to-amber-900/20"></div>
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_40%,rgba(217,179,140,0.15),transparent_50%)]"></div>
         </div>
-        
+
         {/* Floating pieces */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-20 left-10 text-8xl opacity-10 animate-float text-amber-200">♛</div>
@@ -255,9 +229,7 @@ export default function RoomPage({ params }: Props) {
 
   // Show create/join room options if game hasn't started
   if (!gameStarted) {
-    return (
-      <RoomOptions socket={socket} player={player} />
-    );
+    return <RoomOptions socket={socket} player={player} />;
   }
 
   // Show loading if no room name yet
@@ -269,7 +241,7 @@ export default function RoomPage({ params }: Props) {
           <div className="absolute inset-0 bg-gradient-to-r from-amber-900/20 via-yellow-800/15 to-amber-900/20"></div>
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(217,179,140,0.15),transparent_50%)]"></div>
         </div>
-        
+
         {/* Floating pieces */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-1/4 left-1/4 text-6xl opacity-8 animate-float text-amber-300">♞</div>
@@ -353,38 +325,39 @@ export default function RoomPage({ params }: Props) {
             <div className="lg:col-span-3 space-y-4 h-full overflow-y-auto">
               
               {/* Player Info */}
-              <div className="bg-gradient-to-br from-stone-900/60 to-zinc-900/60 backdrop-blur-xl rounded-2xl p-4 border-2 border-amber-600/30 shadow-2xl">
-                <h3 className="text-lg font-bold text-amber-100 mb-4 flex items-center">
-                  <span className="text-2xl mr-2">👤</span>
-                  <span className="bg-gradient-to-r from-amber-300 to-yellow-400 bg-clip-text text-transparent">Player Status</span>
-                </h3>
+              <div className={`${panelClass} p-5 space-y-4`}>
+                <h3 className={`${sectionTitleClass} text-xs`}>👤 Player Status</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="text-center p-3 rounded-xl bg-stone-800/40">
-                    <div className="text-lg mb-1">👨‍💻</div>
-                    <div className="text-xs text-stone-300 mb-1">Username</div>
-                    <div className="text-amber-300 font-semibold text-sm truncate" title={player?.username}>
+                  <div className="text-center p-3 rounded-xl bg-stone-800/30 space-y-1">
+                    <div className="text-base">👨‍💻</div>
+                    <div className="text-[10px] text-stone-400 uppercase tracking-wider">Username</div>
+                    <div className="text-amber-200 font-medium text-xs truncate" title={player?.username}>
                       {player?.username}
                     </div>
                   </div>
-                  <div className="text-center p-3 rounded-xl bg-stone-800/40">
-                    <div className="text-lg mb-1">🎭</div>
-                    <div className="text-xs text-stone-300 mb-1">Playing as</div>
-                    <div className={`font-bold text-sm px-2 py-1 rounded-full ${
-                      playerId === 'white' 
-                        ? 'bg-gradient-to-r from-stone-100 to-amber-50 text-zinc-800' 
-                        : 'bg-gradient-to-r from-stone-800 to-zinc-900 text-amber-100'
-                    }`}>
-                      {playerId?.toUpperCase() || 'WAITING...'}
+                  <div className="text-center p-3 rounded-xl bg-stone-800/30 space-y-1">
+                    <div className="text-base">🎭</div>
+                    <div className="text-[10px] text-stone-400 uppercase tracking-wider">Playing as</div>
+                    <div
+                      className={`${badgeClass} ${
+                        playerId === 'white'
+                          ? 'bg-gradient-to-r from-stone-100 to-amber-50 text-zinc-800'
+                          : 'bg-gradient-to-r from-stone-800 to-zinc-900 text-amber-100'
+                      }`}
+                    >
+                      {playerId?.toUpperCase() || 'WAITING'}
                     </div>
                   </div>
-                  <div className="text-center p-3 rounded-xl bg-stone-800/40">
-                    <div className="text-lg mb-1">⏰</div>
-                    <div className="text-xs text-stone-300 mb-1">Current Turn</div>
-                    <div className={`font-bold text-sm px-2 py-1 rounded-full animate-pulse ${
-                      currentTurn === 'white' 
-                        ? 'bg-gradient-to-r from-stone-100 to-amber-50 text-zinc-800' 
-                        : 'bg-gradient-to-r from-stone-800 to-zinc-900 text-amber-100'
-                    }`}>
+                  <div className="text-center p-3 rounded-xl bg-stone-800/30 space-y-1">
+                    <div className="text-base">⏰</div>
+                    <div className="text-[10px] text-stone-400 uppercase tracking-wider">Current turn</div>
+                    <div
+                      className={`${badgeClass} animate-pulse ${
+                        currentTurn === 'white'
+                          ? 'bg-gradient-to-r from-stone-100 to-amber-50 text-zinc-800'
+                          : 'bg-gradient-to-r from-stone-800 to-zinc-900 text-amber-100'
+                      }`}
+                    >
                       {currentTurn?.toUpperCase()}
                     </div>
                   </div>
@@ -392,39 +365,37 @@ export default function RoomPage({ params }: Props) {
               </div>
 
               {/* AI Suggestions */}
-              <div className="bg-gradient-to-br from-stone-900/60 to-zinc-900/60 backdrop-blur-xl rounded-2xl p-4 border-2 border-amber-600/30 shadow-2xl">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-amber-100 flex items-center">
-                    <span className="text-2xl mr-2">🤖</span>
-                    <span className="bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">AI</span>
-                  </h3>
+              <div className={`${panelClass} p-5 space-y-4`}>
+                <div className="flex items-center justify-between">
+                  <h3 className={`${sectionTitleClass} text-xs text-emerald-300`}>🤖 AI Suggestions</h3>
+                  <span className="text-[10px] text-stone-400 uppercase tracking-wide">Smart picks</span>
                 </div>
-                
+
                 <button
                   onClick={handleSuggestMove}
                   disabled={currentTurn !== playerId || !socket}
-                  className={`w-full py-3 px-4 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 ${
+                  className={`w-full py-2.5 px-3 rounded-xl font-semibold text-sm transition-all duration-300 ${
                     currentTurn === playerId && socket
-                      ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg hover:shadow-emerald-500/25'
-                      : 'bg-stone-700/50 text-stone-400 cursor-not-allowed'
+                      ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md'
+                      : 'bg-stone-800/60 text-stone-500 cursor-not-allowed'
                   }`}
                 >
                   <span className="flex items-center justify-center gap-2">
-                    <span className="text-lg">💡</span>
-                    <span className="text-sm">Suggest Move</span>
+                    <span className="text-base">💡</span>
+                    <span>Suggest Move</span>
                   </span>
                 </button>
 
                 {showSuggestions && (
-                  <div className="mt-4 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold text-amber-100 flex items-center gap-2">
-                        <span className="text-lg">🎯</span>
-                        <span className="text-xs">Divine Guidance</span>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-amber-100 flex items-center gap-2">
+                        <span className="text-sm">🎯</span>
+                        <span>Top choices</span>
                       </span>
                       <button
                         onClick={handleCloseSuggestions}
-                        className="text-stone-400 hover:text-amber-100 text-xs bg-stone-800/40 px-2 py-1 rounded-full transition-colors"
+                        className="text-stone-500 hover:text-amber-100 bg-stone-800/40 px-2 py-1 rounded-full transition-colors"
                       >
                         ✕
                       </button>
@@ -440,7 +411,7 @@ export default function RoomPage({ params }: Props) {
                             </div>
                           )}
                           <div className="flex items-center justify-between">
-                            <span className="font-mono text-amber-100 font-bold text-xs">
+                            <span className="font-mono text-amber-100 font-semibold text-xs">
                               {indexToNotation(suggestion.from.x, suggestion.from.y)} → {indexToNotation(suggestion.to.x, suggestion.to.y)}
                             </span>
                             {suggestion.score && (
@@ -457,25 +428,22 @@ export default function RoomPage({ params }: Props) {
               </div>
 
               {/* Move History */}
-              <div className="bg-gradient-to-br from-stone-900/60 to-zinc-900/60 backdrop-blur-xl rounded-2xl p-4 border-2 border-amber-600/30 shadow-2xl flex-1">
-                <h3 className="text-lg font-bold text-amber-100 mb-4 flex items-center">
-                  <span className="text-2xl mr-2">📜</span>
-                  <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Move History</span>
-                </h3>
-                <div className="max-h-64 overflow-y-auto space-y-2">
+              <div className={`${panelClass} p-5 flex-1 space-y-4`}>
+                <h3 className={`${sectionTitleClass} text-xs text-purple-200`}>📜 Move History</h3>
+                <div className="max-h-64 overflow-y-auto space-y-2 text-xs">
                   {moveHistory.length === 0 ? (
-                    <div className="text-center py-6">
-                      <div className="text-3xl mb-2 opacity-50">⏳</div>
-                      <p className="text-stone-400 italic text-sm">The battle begins...</p>
-                      <p className="text-stone-500 text-xs mt-1">Make the first strike!</p>
+                    <div className="text-center py-6 space-y-1 text-stone-400">
+                      <div className="text-2xl opacity-50">⏳</div>
+                      <p className="italic">The battle begins...</p>
+                      <p className="text-[11px] text-stone-500">Make the first strike!</p>
                     </div>
                   ) : (
                     moveHistory.slice().reverse().map((move, index) => (
                       <div key={index} className="flex items-center gap-2 p-2 rounded-lg bg-stone-800/30 hover:bg-stone-700/40 transition-all duration-200">
-                        <span className="text-stone-400 font-mono text-xs min-w-[1.5rem] bg-stone-800/40 px-1 py-0.5 rounded text-center">
+                        <span className="text-stone-400 font-mono text-[11px] min-w-[1.5rem] bg-stone-800/40 px-1 py-0.5 rounded text-center">
                           {moveHistory.length - index}
                         </span>
-                        <span className="text-amber-100 font-mono font-bold text-sm">{move}</span>
+                        <span className="text-amber-100 font-mono font-semibold text-sm">{move}</span>
                       </div>
                     ))
                   )}
