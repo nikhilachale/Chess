@@ -2,12 +2,30 @@
 
 A real-time multiplayer chess game built with Next.js, WebSocket, and Docker.
 
+## 🚀 Live Demo
+
+**Play Now:** [https://chesss.thecabbro.com/](https://chesss.thecabbro.com/)
+
+## 📸 Screenshots
+
+### Landing Page & Room Selection
+![Landing Page](screenshots/landing-page.png)
+*Create or join game rooms with elegant chess-themed UI*
+
+### Game Interface
+![Game Interface](screenshots/game-interface.png)
+*Real-time chess gameplay with AI suggestions and move history*
+
 ## Features
 
 - ✅ Real-time multiplayer chess gameplay
-- ✅ WebSocket communication for instant moves
+- ✅ WebSocket communication for instant moves  
+- ✅ AI-powered move suggestions with scoring
+- ✅ Live move history tracking
+- ✅ Elegant chess-themed UI with floating pieces
+- ✅ Room-based multiplayer system
 - ✅ Docker containerization for easy deployment
-- ✅ Modern UI with responsive design
+- ✅ Modern responsive design
 - ✅ Complete chess rule implementation including castling, en passant, and promotion
 - ✅ Game state management with move validation
 
@@ -45,7 +63,11 @@ Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
 
 ## Setup Options
 
-### Option 1: Docker Compose (Recommended)
+### Option 1: Try the Live Demo (Quickest)
+
+Just visit: **[https://chesss.thecabbro.com/](https://chesss.thecabbro.com/)** - No installation required!
+
+### Option 2: Docker Compose (Recommended for Local Development)
 
 The fastest way to get started:
 
@@ -68,7 +90,7 @@ docker-compose down
 - UI: http://localhost:3000 (Next.js frontend)
 - WebSocket: ws://localhost:8080 (Real-time communication)
 
-### Option 2: Manual Docker Build
+### Option 3: Manual Docker Build
 
 Build and run containers individually:
 
@@ -86,7 +108,7 @@ docker run -p 8080:8080 chess-ws
 docker run -p 3000:3000 -e NEXT_PUBLIC_WS_URL=ws://localhost:8080 chess-ui
 ```
 
-### Option 3: Local Development
+### Option 4: Local Development
 
 For development with hot reload:
 
@@ -131,10 +153,10 @@ NEXT_PUBLIC_WS_URL=ws://localhost:8080
 
 ## How to Play
 
-1. **Start the application** using any of the setup options above
-2. **Open your browser** and navigate to http://localhost:3000
-3. **Create or join a game room** - the first player creates a room, the second player joins
-4. **Play chess!** - Click on pieces to select them, then click on valid squares to move
+1. **Visit the live demo** at [https://chesss.thecabbro.com/](https://chesss.thecabbro.com/) or start locally using any setup option above
+2. **Create or join a game room** - the first player creates a room, the second player joins
+3. **Play chess!** - Click on pieces to select them, then click on valid squares to move
+4. **Use AI suggestions** - Click the "Suggest Move" button for AI-powered move recommendations
 5. **Real-time updates** - Both players see moves instantly via WebSocket connection
 
 ## Architecture
@@ -266,6 +288,14 @@ docker-compose logs -f
 3. Make your changes
 4. Test with `pnpm dev` and `docker-compose up`
 5. Submit a pull request
+
+### Contributing Screenshots
+
+Help improve the documentation by adding screenshots:
+1. Visit the live demo at [https://chesss.thecabbro.com/](https://chesss.thecabbro.com/)
+2. Take high-quality screenshots (see `screenshots/README.md` for guidelines)
+3. Add them to the `screenshots/` directory
+4. Submit a pull request
 
 ## Technologies
 
