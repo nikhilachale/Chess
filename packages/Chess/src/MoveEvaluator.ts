@@ -216,90 +216,104 @@ export class MoveEvaluator {
 
   // Opening selection: heuristic + weighted randomness
 private getOpeningMoves(allMoves: Move[], player: 'white' | 'black', topN: number): Move[] {
-  allMoves.forEach(move => {
+  const safeMoves: Move[] = [];
+  const riskyMoves: Move[] = [];
+
+  // Evaluate all moves for both tactical opportunity and defensive safety
+  for (const move of allMoves) {
     move.score = this.getOpeningScore(move, player);
 
-    const piece = move.piece.toLowerCase();
-    if (piece !== 'p') {
-      // 1. Apply move temporarily
-      const saved = this.saveState();
-      try {
-        this.game.makeMove(move.from, move.to, player);
-
-        const opponent = this.opponent(player);
-        const opponentMoves = this.generateAllMoves(opponent);
-
-        // 2. Check if our piece is under threat immediately (1-ply)
-        let underThreat = opponentMoves.some(opMove =>
-          opMove.to.x === move.to.x && opMove.to.y === move.to.y
-        );
-
-        // 3. 2-ply lookahead: Check if after opponent moves, our piece could be captured
-        if (!underThreat) {
-          // Generate our possible responses after opponent moves
-          for (const opMove of opponentMoves) {
-            const saved2 = this.saveState();
-            try {
-              this.game.makeMove(opMove.from, opMove.to, opponent);
-
-              // Can opponent capture our moved piece next?
-              const ourNextMoves = this.generateAllMoves(player);
-              const nextThreat = ourNextMoves.some(nm =>
-                nm.to.x === move.to.x && nm.to.y === move.to.y
-              );
-
-              if (!nextThreat) continue;
-              underThreat = true;
-              break;
-            } catch {
-              // Ignore illegal moves
-            } finally {
-              this.restoreState(saved2);
-            }
-          }
-        }
-
-        if (underThreat) {
-          move.score -= 2; // penalty for 2-ply danger
-        }
-
-      } catch {
-        move.score -= 5; // move illegal, heavy penalty
-      } finally {
-        this.restoreState(saved);
-      }
+    const target = this.game.state.board[move.to.x]?.[move.to.y];
+    if (target && target !== '') {
+      // Capture bonus (prefer higher value targets)
+      const captureValue = this.pieceValue(target.toLowerCase());
+      const ownValue = this.pieceValue(move.piece.toLowerCase());
+      move.score! += (captureValue - ownValue * 0.4) * 2;
     }
-  });
 
-  // Sort and pick top moves with some randomness
-  allMoves.sort((a, b) => (b.score || 0) - (a.score || 0));
-  const topPool = allMoves.slice(0, Math.min(allMoves.length, 12));
-  const picks: Move[] = [];
-  for (let i = 0; i < topN; i++) {
-    if (topPool.length === 0) break;
-    if (Math.random() < 0.3) {
-      const idx = Math.floor(Math.random() * topPool.length);
-      picks.push(topPool.splice(idx, 1)[0]!);
-    } else {
-      picks.push(topPool.shift()!);
+    // --- Safety Analysis (one-ply lookahead) ---
+    const saved = this.saveState();
+    try {
+      this.game.makeMove(move.from, move.to, player);
+      const opponent = this.opponent(player);
+      const opponentMoves = this.generateAllMoves(opponent);
+
+      // If opponent can immediately attack our destination square → risk penalty
+      const underThreat = opponentMoves.some(
+        m => m.to.x === move.to.x && m.to.y === move.to.y
+      );
+
+      if (underThreat) {
+        const val = this.pieceValue(move.piece.toLowerCase());
+        move.score! -= val * 2.5; // heavy penalty for risky move
+        riskyMoves.push(move);
+      } else {
+        safeMoves.push(move);
+      }
+
+    } catch {
+      move.score! -= 5; // illegal or unsafe
+    } finally {
+      this.restoreState(saved);
     }
   }
-  return picks;
+
+  // --- Prioritization ---
+  let candidates: Move[];
+  const safeCaptures = safeMoves.filter(m => {
+    const tgt = this.game.state.board[m.to.x]?.[m.to.y];
+    return tgt && tgt !== '';
+  });
+
+  if (safeCaptures.length > 0) {
+    candidates = safeCaptures;
+  } else if (safeMoves.length > 0) {
+    candidates = safeMoves;
+  } else {
+    candidates = riskyMoves; // fallback: risky moves if no alternative
+  }
+
+  // --- Sorting and controlled randomness ---
+  candidates.sort((a, b) => (b.score || 0) - (a.score || 0));
+  const topPool = candidates.slice(0, Math.min(candidates.length, 12));
+  const selected: Move[] = [];
+
+  for (let i = 0; i < topN; i++) {
+    if (topPool.length === 0) break;
+    if (Math.random() < 0.25) {
+      const idx = Math.floor(Math.random() * topPool.length);
+      selected.push(topPool.splice(idx, 1)[0]!);
+    } else {
+      selected.push(topPool.shift()!);
+    }
+  }
+
+  return selected;
 }
 
   private generateAllMoves(player: 'white' | 'black'): Move[] {
     const moves: Move[] = [];
-    const board = this.game.state.board;
+    const originalBoard = JSON.parse(JSON.stringify(this.game.state.board));
+
     for (let x = 0; x < 8; x++) {
       for (let y = 0; y < 8; y++) {
-        const piece = board[x]?.[y];
+        const piece = originalBoard[x]?.[y];
         if (!piece) continue;
         const isWhitePiece = piece === piece.toUpperCase();
         if ((player === 'white' && !isWhitePiece) || (player === 'black' && isWhitePiece)) continue;
-        const pieceMoves = this.game.getMoves(x, y, player);
-        pieceMoves.forEach((to: { x: number; y: number }) => moves.push({ from: { x, y }, to, piece }));
+
+        // Create isolated copy of the game for safe move generation
+        const clone = new ChessGame(player, true);
+        clone.state.board = JSON.parse(JSON.stringify(originalBoard));
+        clone.state.turn = player;
+
+        const pieceMoves = clone.getMoves(x, y, player);
+        for (const to of pieceMoves) {
+          moves.push({ from: { x, y }, to, piece });
+        }
       }
     }
+
     return moves;
   }
 

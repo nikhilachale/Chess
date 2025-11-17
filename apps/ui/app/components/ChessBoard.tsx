@@ -7,12 +7,21 @@ import PieceIcon from "./PieceIcon";
 
 export default function ChessBoard({ 
   onSquareClick, 
-  highlightedSuggestion 
+  highlightedSuggestion,
+  board: externalBoard,
+  selected: externalSelected,
+  availableMoves: externalAvailableMoves
 }: { 
   onSquareClick: (row: number, col: number) => void;
   highlightedSuggestion?: {from: {x: number, y: number}, to: {x: number, y: number}} | null;
+  board?: string[][];
+  selected?: { x: number; y: number } | null;
+  availableMoves?: Array<{x: number, y: number}>;
 }) {
-   const { board, check, canMove, selectedPiece } = useChessStore();
+  const { board: storeBoard, check, canMove, selectedPiece: storeSelected } = useChessStore();
+  const board = externalBoard || storeBoard;
+  const selectedPiece = externalSelected || storeSelected;
+  const availableMoves = externalAvailableMoves || canMove;
   
   return (
    <div className="grid grid-cols-8 border-4 border-gray-900  overflow-hidden shadow-lg">
@@ -20,7 +29,7 @@ export default function ChessBoard({
         row.map((piece, colIndex) => {
           const isBlack = (rowIndex + colIndex) % 2 === 1;
           const isSelected = selectedPiece?.x === rowIndex && selectedPiece?.y === colIndex;
-          const isAvailableMove = canMove.some(move => move.x === rowIndex && move.y === colIndex);
+          const isAvailableMove = availableMoves.some(move => move.x === rowIndex && move.y === colIndex);
           const isSuggestionFrom = highlightedSuggestion?.from.x === rowIndex && highlightedSuggestion?.from.y === colIndex;
           const isSuggestionTo = highlightedSuggestion?.to.x === rowIndex && highlightedSuggestion?.to.y === colIndex;
 

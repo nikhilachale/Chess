@@ -40,6 +40,7 @@ export default function RoomPage({ params }: Props) {
   const [gameStarted, setGameStarted] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [showJoinPopup, setShowJoinPopup] = useState(false);
+  const [socketStatus, setSocketStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
 
 
   const [moveHistory, setMoveHistory] = useState<string[]>([]);
@@ -81,12 +82,14 @@ export default function RoomPage({ params }: Props) {
     };
 
     if (!socket) {
+      setSocketStatus('connecting');
       const ws = new WebSocket( process.env.NEXT_PUBLIC_WS_URL ||"ws://localhost:8080" );
       // const ws = new WebSocket("ws://3.110.54.252:8080");
 
       ws.onopen = () => {
         console.log("WebSocket connected");
         setSocket(ws);
+        setSocketStatus('connected');
       };
 
       ws.onmessage = (event) => {
@@ -156,10 +159,12 @@ export default function RoomPage({ params }: Props) {
         alert("WebSocket connection closed");
         console.log("WebSocket disconnected");
         setSocket(null);
+        setSocketStatus('disconnected');
       };
 
       ws.onerror = (error) => {
         console.error("WebSocket error:", error);
+        setSocketStatus('disconnected');
       };
     }
   }, [socket, setSocket, setRoomName, setPlayerId, setCurrentTurn, setBoard, setCanMove, setCheck, board, setGameStarted, setShowJoinPopup, setRoomChoice, setMoveSuggestions, setShowSuggestions, setHighlightedSuggestion, setMoveHistory, indexToNotation]);
@@ -198,6 +203,73 @@ export default function RoomPage({ params }: Props) {
     "flex items-center gap-2 font-semibold tracking-wide text-amber-100 text-sm uppercase";
   const badgeClass =
     "font-semibold text-xs px-2 py-1 rounded-full transition-colors";
+
+  // Show socket connecting status
+  if (socketStatus === 'connecting' || socketStatus === 'disconnected') {
+    const isDisconnected = socketStatus === 'disconnected';
+    return (
+      <div className="relative w-full min-h-screen overflow-hidden">
+        {/* Chess-themed background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-zinc-950 via-stone-900 to-zinc-950">
+          <div className="absolute inset-0 bg-gradient-to-r from-amber-900/20 via-yellow-800/15 to-amber-900/20"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_40%,rgba(217,179,140,0.15),transparent_50%)]"></div>
+        </div>
+
+        {/* Floating pieces */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 left-10 text-8xl opacity-10 animate-float text-amber-200">♛</div>
+          <div className="absolute bottom-20 right-20 text-6xl opacity-8 animate-float-delay text-stone-300">♜</div>
+        </div>
+
+        {/* Navbar */}
+        <nav className="absolute top-0 left-0 right-0 z-20 p-4 flex justify-between items-center text-amber-200 font-semibold">
+          <div className="flex items-center gap-3 text-xl font-bold tracking-wide">♔ ROYAL CHESS</div>
+          <button
+            onClick={() => window.location.href = '/'}
+            className="px-4 py-2 bg-amber-600 rounded-lg shadow hover:scale-105 transition-transform text-sm"
+          >
+            Back to Home
+          </button>
+        </nav>
+
+        <div className="relative z-10 flex items-center justify-center min-h-screen">
+          <div className="text-center bg-gradient-to-br from-stone-900/60 to-zinc-900/60 backdrop-blur-xl rounded-3xl p-12 border-2 border-amber-600/30 shadow-2xl max-w-md">
+            <div className={`text-7xl mb-6 ${isDisconnected ? 'animate-pulse text-red-400' : 'animate-spin text-amber-400'}`}>
+              {isDisconnected ? '🔌' : '🌐'}
+            </div>
+            {!isDisconnected && (
+              <div className="animate-spin rounded-full h-16 w-16 border-4 border-amber-400 border-t-transparent mx-auto mb-6"></div>
+            )}
+            <p className={`text-xl font-semibold mb-2 ${isDisconnected ? 'text-red-200' : 'text-amber-100'}`}>
+              {isDisconnected ? 'Connection Lost' : 'Connecting to Server...'}
+            </p>
+            <p className="text-stone-400 text-sm">
+              {isDisconnected 
+                ? 'Unable to connect to the chess server. Please check your connection and try again.'
+                : 'Establishing secure WebSocket connection'
+              }
+            </p>
+            {isDisconnected && (
+              <button
+                onClick={() => window.location.reload()}
+                className="mt-6 px-6 py-3 bg-gradient-to-r from-amber-600 to-yellow-600 text-zinc-900 font-bold rounded-xl hover:scale-105 transition-transform"
+              >
+                🔄 Retry Connection
+              </button>
+            )}
+            
+            {/* Connection Status Indicator */}
+            <div className="mt-6 flex items-center justify-center gap-2">
+              <div className={`w-3 h-3 rounded-full ${isDisconnected ? 'bg-red-500' : 'bg-yellow-500 animate-pulse'}`}></div>
+              <span className="text-stone-400 text-sm">
+                {isDisconnected ? 'Disconnected' : 'Connecting...'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Show loading if roomId is not yet resolved
   if (!roomId) {
@@ -305,6 +377,24 @@ export default function RoomPage({ params }: Props) {
                 </h1>
               </div>
               <div className="text-2xl">👑</div>
+            </div>
+
+            {/* Connection Status Indicator */}
+            <div className="mt-2 inline-flex items-center gap-2 bg-stone-800/40 backdrop-blur-xl rounded-xl px-3 py-1 border border-amber-600/10">
+              <div className={`w-2 h-2 rounded-full ${
+                socketStatus === 'connected' ? 'bg-emerald-500 animate-pulse' : 
+                socketStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' : 
+                'bg-red-500'
+              }`}></div>
+              <span className={`text-xs font-medium ${
+                socketStatus === 'connected' ? 'text-emerald-300' : 
+                socketStatus === 'connecting' ? 'text-yellow-300' : 
+                'text-red-300'
+              }`}>
+                {socketStatus === 'connected' ? 'Connected' : 
+                 socketStatus === 'connecting' ? 'Connecting...' : 
+                 'Disconnected'}
+              </span>
             </div>
             
             {check && (

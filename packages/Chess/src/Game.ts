@@ -29,9 +29,9 @@ export interface GameState {
 export class ChessGame {
   state: GameState;
 
-  constructor(playerId: string) {
+  constructor(playerId: string, skipRoomId: boolean = false) {
     this.state = {
-      roomId: ChessGame.generateRoomCode(),
+      roomId: skipRoomId ? "BOTMODE" : ChessGame.generateRoomCode(),
       players: [playerId],
       board: ChessGame.createInitialBoard(),
       turn: playerId,
@@ -414,10 +414,26 @@ export class ChessGame {
     // turn check
     if (this.state.turn !== playerId) throw new Error("Not your turn");
 
-    const legal = this.getMoves(from.x, from.y, playerId);
-    if (!legal.some(m => m.x === to.x && m.y === to.y)) {
-      throw new Error("Illegal move");
-    }
+   const legal = this.getMoves(from.x, from.y, playerId);
+
+// Defensive: if board desync or wrong turn, try to recover
+if (this.state.turn !== playerId) {
+  console.warn(`[WARN] Turn desync detected. Forcing turn to ${playerId}`);
+  this.state.turn = playerId;
+}
+
+// Validate legal move existence
+const isLegal = legal.some(m => m.x === to.x && m.y === to.y);
+if (!isLegal) {
+  console.warn(`[ILLEGAL MOVE] ${playerId} attempted invalid move from (${from.x},${from.y}) to (${to.x},${to.y})`);
+  console.warn("Available moves:", legal);
+  return {
+    error: "Illegal move",
+    board: this.state.board,
+    turn: this.state.turn,
+    validMoves: legal
+  };
+}
 
 
 

@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { useChessStore } from "./store/chessStore";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import Footer from "./components/Footer";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -165,6 +166,8 @@ export default function ChessApp() {
           </button>
         </section>
       </main>
+
+     <Footer/>
 
       {/* MODAL */}
       {showPlayPopup && (
