@@ -84,7 +84,7 @@ export default function BotBoard() {
     try {
       console.log("Attempting move from", selected, "to", clicked);
       const result = game.makeMove(selected, clicked, "white");
-
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if ((result as any)?.error === "Illegal move") {
         console.warn("Illegal move detected, ignoring");
         // Keep the selection active so user can try another move
@@ -136,13 +136,17 @@ export default function BotBoard() {
             // If bot has no moves, it might be checkmate or stalemate
             setMessage("🎉 You Win! Bot has no valid moves!");
           }
-        } catch (botError: any) {
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         catch (botError: any) {
           console.error("Bot move error:", botError);
           setMessage("🤖 Bot encountered an error. You win!");
         }
         setIsThinking(false);
       }, 500);
-    } catch (err: any) {
+    } 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    catch (err: any) {
       console.error("Move error:", err);
       // invalid move -> keep selection so the user can try a different destination
     }

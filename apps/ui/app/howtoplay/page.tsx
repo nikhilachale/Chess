@@ -206,7 +206,7 @@ export default function HowToPlayPage() {
                   <div className="text-5xl mb-3">⚔️</div>
                   <h3 className="text-xl font-bold text-amber-100">Checkmate</h3>
                   <p className="text-stone-300 text-sm leading-relaxed">
-                    Trap the opponent's king so it cannot escape capture. The ultimate victory!
+                    Trap the opponents king so it cannot escape capture. The ultimate victory!
                   </p>
                 </div>
                 
@@ -261,7 +261,7 @@ export default function HowToPlayPage() {
               <div className="text-7xl mb-6">♔</div>
               <h2 className="text-4xl font-bold text-amber-200 mb-4">Ready to Play?</h2>
               <p className="text-stone-300 text-lg mb-8 max-w-2xl mx-auto">
-                Now that you know the rules, it's time to put your skills to the test. 
+                Now that you know the rules, its time to put your skills to the test. 
                 Challenge opponents worldwide or practice against our intelligent AI.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">

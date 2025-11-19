@@ -3,7 +3,7 @@ FROM node:22-alpine
 # Install build dependencies
 RUN apk add --no-cache libc6-compat
 
-WORKDIR /apps
+WORKDIR /app
 
 # Copy root workspace files
 COPY package*.json ./
